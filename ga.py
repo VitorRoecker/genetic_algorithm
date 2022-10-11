@@ -1,58 +1,51 @@
-import sys
-
 import numpy as np
+def fitness(inputs, numPop):
 
+    result = np.sum(numPop * inputs, axis=1)
 
-def cal_pop_fitness(equation_inputs, pop):
-    # Cálculo do ‘fitness’ de cada solução na população atual
-    # A função ‘fitness’ calcula a soma dos produtos entre cada
-    # entrada e seu peso correspondente
-    return np.sum(pop * equation_inputs, axis=1)
+    fitness = []
 
+    for num in result :
+        if (num > 30 ) :
+            num *= -9999999
 
-def select_mating_pool(pop, fitness, num_parents):
-    # Selecionar os melhores indivíduos na geração atual
-    # para seren pais para cruzamento
-    parents = np.empty((num_parents, pop.shape[1]))
+        fitness.append(num)
 
-    for parent_num in range(num_parents):
-        max_fitness_idx = np.where(fitness == np.max(fitness))
+    return np.array(fitness)
+
+def selection(numPop, fitArray, num):
+    parentsArray = np.empty((num, numPop.shape[1]))
+    
+    for idx in range(num):
+        
+        max_fitness_idx = np.where(fitArray == np.max(fitArray))
         max_fitness_idx = max_fitness_idx[0][0]
-        parents[parent_num, :] = pop[max_fitness_idx, :]
-        fitness[max_fitness_idx] = -sys.maxsize - 1
+        parentsArray[idx, :] = numPop[max_fitness_idx, :]
+        fitArray[max_fitness_idx] = -999999
+    return parentsArray
 
-    return parents
-
-
-def crossover(parents, offspring_size):
-    offspring = np.empty(offspring_size)
-    # o ponto onde o cruzamento acontece entre os dois genitores
-    # geramos um número aleatório entre 1 e o tamanho do cromossomo
-    crossover_point = np.random.randint(1, offspring_size[1])
-
-    for k in range(offspring_size[0]):
-        # índice do primeiro genitor
-        parent1_idx = k % parents.shape[0]
-        # índice do segundo genitor
-        parent2_idx = (k+1) % parents.shape[0]
-        # o novo filho terá a primeira parte de seus genes
-        # oriunda do primeiro genitor
-        offspring[k, 0:crossover_point] = parents[parent1_idx, 0:crossover_point]
-        # o novo filho terá a segunda parte de seus genes
-        # oriunda do segundo genitor
-        offspring[k, crossover_point:] = parents[parent2_idx, crossover_point:]
-
+def crossover(parents, generation_size):
+    offspring = np.empty(generation_size)
+    
+    crossover_point = np.uint8(generation_size[1]/2)
+    
+    for idx in range(generation_size[0]):
+        p1_idx = idx % parents.shape[0]
+        p2_idx = (idx + 1) % parents.shape[0]
+        
+        offspring[idx, 0:crossover_point] = parents[
+            p1_idx, 0:crossover_point]
+        
+        offspring[idx, crossover_point:] = parents[
+            p2_idx, crossover_point:
+        ]
     return offspring
 
-
-def mutation(offspring_crossover, mutation_rate=0.3):
-    # a mutação transforma um gene único em cada filho, aleatoriamente
-    for idx in range(offspring_crossover.shape[0]):
-        # a mutação só ocorrerá se dentro da 'mutation_rate' (por padrão 30%)
-        if np.random.random() < mutation_rate:
-            # O valor aleatório a ser adicionado
-            random_idx = np.random.randint(0, offspring_crossover.shape[1])
-            random_value = np.random.uniform(-1.0, 1.0, 1)
-            offspring_crossover[idx, random_idx] = offspring_crossover[idx, random_idx] + random_value
-
-    return offspring_crossover
+def mutation(offspring):
+    for idx in range(offspring.shape[0]):
+        random_idx = np.random.randint(offspring.shape[1])
+        
+        offspring[idx, random_idx] = (
+            abs(offspring[idx, random_idx] - 1)
+        )
+    return offspring
